@@ -1,6 +1,7 @@
 require("dotenv").config();
 const { ApolloServer, gql } = require("apollo-server");
 const { PORT } = require("./config/env");
+const prisma = require("./config/prisma");
 
 // Temporary schema
 const typeDefs = gql`
@@ -27,7 +28,16 @@ const server = new ApolloServer({
   },
 });
 
-// Start server
-server.listen({ port: PORT }).then(({ url }) => {
+async function startServer() {
+  await prisma.$connect();
+  console.log("Database connected successfully");
+
+  const { url } = await server.listen({ port: PORT });
   console.log(`Server running at ${url}`);
+}
+
+startServer().catch(async (error) => {
+  console.error("Failed to start server", error);
+  await prisma.$disconnect();
+  process.exit(1);
 });
