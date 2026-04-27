@@ -1,23 +1,14 @@
 require("dotenv").config();
-const { ApolloServer, gql } = require("apollo-server");
+const { ApolloServer } = require("apollo-server");
 const { PORT } = require("./config/env");
 const prisma = require("./config/prisma");
+const typeDefs = require("./schema");
 
-// Temporary schema
-const typeDefs = gql`
-  type Query {
-    hello: String
-  }
-`;
-
-// Temporary resolver
 const resolvers = {
-  Query: {
-    hello: () => "Threads Backend Running 🚀",
-  },
+  Query: {},
+  Mutation: {},
 };
 
-// Create server
 const server = new ApolloServer({
   typeDefs,
   resolvers,
