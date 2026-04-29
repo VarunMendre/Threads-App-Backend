@@ -1,162 +1,200 @@
-# 🧵 Threads Backend (GraphQL)
+# Threads Backend (GraphQL)
 
-A scalable backend for a **Threads-like social media application** built using **GraphQL**, following clean architecture principles (Resolvers → Services → DAO → Database).
+A backend for a Threads-like social media application built with GraphQL, Apollo Server, Prisma, and PostgreSQL.
 
----
+The project now follows a clean layered flow:
 
-## 🚀 Tech Stack
+`Resolvers -> Services -> DAO -> Database`
 
-* **Node.js** – Runtime
-* **Apollo Server (GraphQL)** – API Layer
-* **PostgreSQL** *(upcoming)* – Database
-* **Prisma ORM** *(upcoming)* – Database Access
-* **JWT** *(upcoming)* – Authentication
-* **Nodemon** – Development
+## Tech Stack
 
----
+- Node.js
+- Apollo Server
+- GraphQL
+- Prisma ORM
+- PostgreSQL
+- Nodemon
 
-## 📁 Project Structure
+## Project Structure
 
-```
+```text
 src/
- ├── index.js          # Entry point (Apollo Server setup)
- ├── config/           # Environment & config files
- ├── schema/           # GraphQL type definitions
- ├── resolvers/        # GraphQL resolvers
- ├── services/         # Business logic layer
- ├── dao/              # Database access layer (Prisma)
- ├── utils/            # Utility functions
+|-- index.js            # App entry point
+|-- config/             # Env and Prisma configuration
+|-- schema/             # GraphQL type definitions
+|-- resolvers/          # GraphQL resolvers
+|-- services/           # Business logic and validations
+|-- dao/                # Data access layer
+|-- utils/              # Shared helpers
 ```
 
----
+## Architecture
 
-## 🧠 Architecture Overview
-
-```
-Client → GraphQL API → Resolvers → Services → DAO → Database
+```text
+Client -> GraphQL API -> Resolvers -> Services -> DAO -> Database
 ```
 
-* **Resolvers** → Handle GraphQL requests
-* **Services** → Business logic
-* **DAO** → Direct DB interaction
-* **Prisma** → ORM layer
-* **PostgreSQL** → Database
+- Resolvers handle GraphQL queries, mutations, and field resolution.
+- Services enforce business rules and validations.
+- DAO files are the only layer that talks directly to Prisma.
+- PostgreSQL stores the application data.
 
----
+## Current Features
 
-## ⚙️ Getting Started
+- Apollo GraphQL server setup
+- Prisma + PostgreSQL integration
+- User and Thread schema definitions
+- DAO layer for user and thread persistence
+- Service layer for business logic
+- Validation for required fields
+- Duplicate email protection during registration
+- Author existence validation before thread creation
 
-### 1️⃣ Clone the Repository
+## Implemented Services
 
-```bash
-git clone https://github.com/your-username/threads-backend.git
-cd threads-backend
+### User Service
+
+`src/services/user.service.js`
+
+- `registerUser({ name, email, password })`
+- `getUserById(id)`
+- `getUserThreads(userId)`
+
+Business rules:
+
+- Prevents empty registration fields
+- Prevents duplicate email registration
+- Throws a clear error when a user is missing
+
+### Thread Service
+
+`src/services/thread.service.js`
+
+- `createThread({ title, content, authorId })`
+- `getAllThreads()`
+- `getThreadById(id)`
+
+Business rules:
+
+- Prevents empty thread title or content
+- Verifies that the author exists
+- Throws a clear error when a thread is missing
+
+## GraphQL Operations
+
+### Queries
+
+```graphql
+query GetUser($id: ID!) {
+  getUser(id: $id) {
+    id
+    name
+    email
+    threads {
+      id
+      title
+    }
+  }
+}
 ```
 
----
+```graphql
+query GetAllThreads {
+  getAllThreads {
+    id
+    title
+    content
+    author {
+      id
+      name
+    }
+  }
+}
+```
 
-### 2️⃣ Install Dependencies
+### Mutations
+
+```graphql
+mutation RegisterUser {
+  registerUser(
+    name: "Test User"
+    email: "test@example.com"
+    password: "123456"
+  ) {
+    id
+    name
+    email
+  }
+}
+```
+
+```graphql
+mutation CreateThread($authorId: ID!) {
+  createThread(
+    title: "Service Layer Thread"
+    content: "Now we are using services"
+    authorId: $authorId
+  ) {
+    id
+    title
+    content
+  }
+}
+```
+
+## Getting Started
+
+### 1. Install dependencies
 
 ```bash
 npm install
 ```
 
----
+### 2. Create `.env`
 
-### 3️⃣ Setup Environment Variables
-
-Create a `.env` file in the root:
+Add your environment variables in the project root:
 
 ```env
 PORT=8000
+DATABASE_URL=your_postgresql_connection_string
 ```
 
----
+### 3. Generate Prisma client
 
-### 4️⃣ Run Development Server
+```bash
+npx prisma generate
+```
+
+### 4. Run the server
 
 ```bash
 npm run dev
 ```
 
----
+If PowerShell blocks `npm`, use:
 
-## 🧪 Test GraphQL API
-
-Open in browser:
-
-```
-http://localhost:8000/graphql
+```bash
+npm.cmd run dev
 ```
 
-Run:
+## API Endpoint
 
-```graphql
-query {
-  hello
-}
+Open GraphQL Playground at:
+
+```text
+http://localhost:8000/
 ```
 
-Expected response:
+## Phase Status
 
-```json
-{
-  "data": {
-    "hello": "Threads Backend Running 🚀"
-  }
-}
-```
+- Phase 1: Server setup
+- Phase 2: Prisma and PostgreSQL setup
+- Phase 3: GraphQL schema design
+- Phase 4: DAO layer
+- Phase 5: Service layer
+- Phase 6: Authentication and authorization
+- Phase 7: Production improvements
 
----
+## Author
 
-## 📌 Current Features (Phase 1)
-
-* ✅ Apollo GraphQL Server setup
-* ✅ Environment configuration
-* ✅ Scalable folder structure
-* ✅ Basic query (`hello`)
-
----
-
-## 🔜 Upcoming Phases
-
-* 🔹 Phase 2: PostgreSQL + Prisma setup
-* 🔹 Phase 3: GraphQL schema design
-* 🔹 Phase 4: DAO & Service layer implementation
-* 🔹 Phase 5: Authentication (JWT)
-* 🔹 Phase 6: Social features (Threads, Likes, Comments)
-* 🔹 Phase 7: Production optimizations
-
----
-
-## 🎯 Learning Goals
-
-This project is built to:
-
-* Master **GraphQL (Queries, Mutations, Resolvers)**
-* Understand **Backend Architecture (LLD concepts)**
-* Build a **production-ready Node.js backend**
-* Learn **Prisma ORM + PostgreSQL**
-* Implement **Authentication & Authorization**
-
----
-
-## 🤝 Contributing
-
-This is a personal learning project, but suggestions and improvements are always welcome!
-
----
-
-## 📜 License
-
-This project is open-source and available under the MIT License.
-
----
-
-## 👨‍💻 Author
-
-**Varun Mendre**
-
----
-
-⭐ If you find this project useful, consider giving it a star!
+Varun Mendre
