@@ -1,15 +1,28 @@
-const userDAO = require("../dao/user.dao");
 const threadService = require("../services/thread.service");
+const userService = require("../services/user.service");
 
-module.exports = {
+const threadResolvers = {
   Query: {
-    getAllThreads: () => threadService.getAllThreads(),
-    getThreadById: (_, { id }) => threadService.getThreadById(id),
+    getAllThreads: async () => {
+      return threadService.getAllThreads();
+    },
+
+    getThreadById: async (_, { id }) => {
+      return threadService.getThreadById(id);
+    },
   },
+
   Mutation: {
-    createThread: (_, args) => threadService.createThread(args),
+    createThread: async (_, args) => {
+      return threadService.createThread(args);
+    },
   },
+
   Thread: {
-    author: (parent) => userDAO.getUserById(parent.authorId),
+    author: async (parent) => {
+      return userService.getUserById(parent.authorId);
+    },
   },
 };
+
+module.exports = threadResolvers;

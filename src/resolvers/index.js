@@ -1,19 +1,17 @@
-const userResolver = require("./user.resolver");
-const threadResolver = require("./thread.resolver");
+const userResolvers = require("./user.resolver");
+const threadResolvers = require("./thread.resolver");
 
-module.exports = {
+const resolvers = {
   Query: {
-    ...userResolver.Query,
-    ...threadResolver.Query,
+    ...userResolvers.Query,
+    ...threadResolvers.Query,
   },
   Mutation: {
-    ...userResolver.Mutation,
-    ...threadResolver.Mutation,
+    ...userResolvers.Mutation,
+    ...threadResolvers.Mutation,
   },
-  User: {
-    ...userResolver.User,
-  },
-  Thread: {
-    ...threadResolver.Thread,
-  },
+  User: userResolvers.User,
+  Thread: threadResolvers.Thread,
 };
+
+module.exports = resolvers;

@@ -1,13 +1,24 @@
 const userService = require("../services/user.service");
+const userDAO = require("../dao/user.dao");
 
-module.exports = {
+const userResolvers = {
   Query: {
-    getUser: (_, { id }) => userService.getUserById(id),
+    getUser: async (_, { id }) => {
+      return userService.getUserById(id);
+    },
   },
+
   Mutation: {
-    registerUser: (_, args) => userService.registerUser(args),
+    registerUser: async (_, args) => {
+      return userService.registerUser(args);
+    },
   },
+
   User: {
-    threads: (parent) => userService.getUserThreads(parent.id),
+    threads: async (parent) => {
+      return userDAO.getUserThreads(parent.id);
+    },
   },
 };
+
+module.exports = userResolvers;
