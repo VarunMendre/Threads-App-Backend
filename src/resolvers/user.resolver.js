@@ -12,6 +12,9 @@ const userResolvers = {
     registerUser: async (_, args) => {
       return userService.registerUser(args);
     },
+    loginUser: async (_, args) => {
+      return userService.loginUser(args);
+    },
   },
 
   User: {

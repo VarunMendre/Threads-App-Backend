@@ -1,5 +1,6 @@
 require("dotenv").config();
 const { ApolloServer } = require("apollo-server");
+const jwt = require("jsonwebtoken");
 const { PORT } = require("./config/env");
 const prisma = require("./config/prisma");
 const typeDefs = require("./schema");
@@ -9,8 +10,22 @@ const server = new ApolloServer({
   typeDefs,
   resolvers,
   context: ({ req }) => {
+    const authHeader = req.headers.authorization || "";
+    let user = null;
+
+    if (authHeader) {
+      try {
+        const token = authHeader.replace("Bearer ", "");
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        user = { id: decoded.userId };
+      } catch (error) {
+        console.log("Invalid token");
+      }
+    }
+
     return {
       req,
+      user,
     };
   },
 });

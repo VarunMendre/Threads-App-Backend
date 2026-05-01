@@ -13,8 +13,15 @@ const threadResolvers = {
   },
 
   Mutation: {
-    createThread: async (_, args) => {
-      return threadService.createThread(args);
+    createThread: async (_, args, { user }) => {
+      if (!user) {
+        throw new Error("Unauthorized");
+      }
+
+      return threadService.createThread({
+        ...args,
+        authorId: user.id,
+      });
     },
   },
 

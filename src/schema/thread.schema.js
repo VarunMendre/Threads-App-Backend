@@ -18,7 +18,6 @@ const threadTypeDefs = gql`
     createThread(
       title: String!
       content: String!
-      authorId: ID!
     ): Thread
   }
 `;
