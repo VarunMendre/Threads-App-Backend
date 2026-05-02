@@ -1,5 +1,8 @@
 const threadService = require("../services/thread.service");
 const userService = require("../services/user.service");
+const likeDAO = require("../dao/like.dao");
+const likeService = require("../services/like.service");
+const commentService = require("../services/comment.service");
 
 const threadResolvers = {
   Query: {
@@ -23,11 +26,41 @@ const threadResolvers = {
         authorId: user.id,
       });
     },
+    likeThread: async (_, { threadId }, { user }) => {
+      if (!user) {
+        throw new Error("Unauthorized");
+      }
+
+      await likeService.likeThread(user.id, threadId);
+      return true;
+    },
+    unlikeThread: async (_, { threadId }, { user }) => {
+      if (!user) {
+        throw new Error("Unauthorized");
+      }
+
+      await likeService.unlikeThread(user.id, threadId);
+      return true;
+    },
+    addComment: async (_, { threadId, content }, { user }) => {
+      if (!user) {
+        throw new Error("Unauthorized");
+      }
+
+      return commentService.addComment(user.id, threadId, content);
+    },
   },
 
   Thread: {
     author: async (parent) => {
       return userService.getUserById(parent.authorId);
+    },
+    likesCount: async (parent) => {
+      const likes = await likeDAO.getLikesByThread(parent.id);
+      return likes.length;
+    },
+    comments: async (parent) => {
+      return commentService.getComments(parent.id);
     },
   },
 };

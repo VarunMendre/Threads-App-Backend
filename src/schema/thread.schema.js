@@ -6,6 +6,8 @@ const threadTypeDefs = gql`
     title: String!
     content: String!
     author: User!
+    likesCount: Int!
+    comments: [Comment!]!
     createdAt: String!
   }
 
@@ -19,6 +21,9 @@ const threadTypeDefs = gql`
       title: String!
       content: String!
     ): Thread
+    likeThread(threadId: ID!): Boolean!
+    unlikeThread(threadId: ID!): Boolean!
+    addComment(threadId: ID!, content: String!): Comment!
   }
 `;
 

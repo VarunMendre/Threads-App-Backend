@@ -11,6 +11,8 @@ const userTypeDefs = gql`
     name: String!
     email: String!
     threads: [Thread]
+    followers: [User!]!
+    following: [User!]!
     createdAt: String!
   }
 
@@ -25,6 +27,8 @@ const userTypeDefs = gql`
       password: String!
     ): User
     loginUser(email: String!, password: String!): AuthPayload
+    followUser(userId: ID!): Boolean!
+    unfollowUser(userId: ID!): Boolean!
   }
 `;
 
