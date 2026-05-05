@@ -7,6 +7,18 @@ class ThreadDAO {
     });
   }
 
+  async getPaginatedThreads(limit, cursor) {
+    return prisma.thread.findMany({
+      take: limit,
+      skip: cursor ? 1 : 0,
+      cursor: cursor ? { id: cursor } : undefined,
+      orderBy: [
+        { createdAt: "desc" },
+        { id: "desc" },
+      ],
+    });
+  }
+
   async getThreadById(id) {
     return prisma.thread.findUnique({
       where: { id },

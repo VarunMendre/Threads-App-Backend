@@ -1,10 +1,10 @@
-require("dotenv").config();
 const { ApolloServer } = require("apollo-server");
 const jwt = require("jsonwebtoken");
-const { PORT } = require("./config/env");
+const { PORT, JWT_SECRET, NODE_ENV } = require("./config/env");
 const prisma = require("./config/prisma");
 const typeDefs = require("./schema");
 const resolvers = require("./resolvers");
+const { error: logError, log } = require("./utils/logger");
 
 const server = new ApolloServer({
   typeDefs,
@@ -16,10 +16,10 @@ const server = new ApolloServer({
     if (authHeader) {
       try {
         const token = authHeader.replace("Bearer ", "");
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const decoded = jwt.verify(token, JWT_SECRET);
         user = { id: decoded.userId };
       } catch (error) {
-        console.log("Invalid token");
+        log("Invalid token received");
       }
     }
 
@@ -28,19 +28,35 @@ const server = new ApolloServer({
       user,
     };
   },
+  formatError: (err) => {
+    const statusCode =
+      err.originalError?.statusCode ||
+      err.extensions?.exception?.statusCode ||
+      500;
+
+    if (statusCode >= 500) {
+      logError("Unhandled GraphQL error", err);
+    }
+
+    return {
+      message: err.message,
+      statusCode,
+      ...(NODE_ENV === "development" ? { path: err.path } : {}),
+    };
+  },
 });
 
 async function startServer() {
   await prisma.$connect();
 
-  console.log("Database connected successfully");
+  log("Database connected successfully");
 
   const { url } = await server.listen({ port: PORT });
-  console.log(`Server running at ${url}`);
+  log(`Server running at ${url}`);
 }
 
-startServer().catch(async (error) => {
-  console.error("Failed to start server", error);
+startServer().catch(async (startupError) => {
+  logError("Failed to start server", startupError);
   await prisma.$disconnect();
   process.exit(1);
 });

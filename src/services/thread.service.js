@@ -1,20 +1,20 @@
 const threadDAO = require("../dao/thread.dao");
 const userDAO = require("../dao/user.dao");
+const { NotFoundError } = require("../utils/errors");
+const { threadSchema, paginationSchema, validate } = require("../utils/validators");
 
 class ThreadService {
   async createThread({ title, content, authorId }) {
-    if (!title || !content) {
-      throw new Error("Title and content are required");
-    }
+    const validatedData = validate(threadSchema, { title, content });
 
     const user = await userDAO.getUserById(authorId);
     if (!user) {
-      throw new Error("Author not found");
+      throw new NotFoundError("Author not found");
     }
 
     return threadDAO.createThread({
-      title,
-      content,
+      title: validatedData.title,
+      content: validatedData.content,
       authorId,
     });
   }
@@ -23,10 +23,22 @@ class ThreadService {
     return threadDAO.getAllThreads();
   }
 
+  async getThreads({ limit, cursor }) {
+    const validatedData = validate(paginationSchema, { limit, cursor });
+    const threads = await threadDAO.getPaginatedThreads(
+      validatedData.limit,
+      validatedData.cursor
+    );
+    const nextCursor =
+      threads.length === validatedData.limit ? threads[threads.length - 1].id : null;
+
+    return { threads, nextCursor };
+  }
+
   async getThreadById(id) {
     const thread = await threadDAO.getThreadById(id);
     if (!thread) {
-      throw new Error("Thread not found");
+      throw new NotFoundError("Thread not found");
     }
 
     return thread;

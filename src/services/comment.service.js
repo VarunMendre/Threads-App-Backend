@@ -1,27 +1,27 @@
 const commentDAO = require("../dao/comment.dao");
 const threadDAO = require("../dao/thread.dao");
 const userDAO = require("../dao/user.dao");
+const { NotFoundError } = require("../utils/errors");
+const { commentSchema, validate } = require("../utils/validators");
 
 class CommentService {
   async addComment(userId, threadId, content) {
-    if (!content || !content.trim()) {
-      throw new Error("Content required");
-    }
+    const validatedData = validate(commentSchema, { content });
 
     const user = await userDAO.getUserById(userId);
     if (!user) {
-      throw new Error("User not found");
+      throw new NotFoundError("User not found");
     }
 
     const thread = await threadDAO.getThreadById(threadId);
     if (!thread) {
-      throw new Error("Thread not found");
+      throw new NotFoundError("Thread not found");
     }
 
     return commentDAO.createComment({
       userId,
       threadId,
-      content: content.trim(),
+      content: validatedData.content,
     });
   }
 

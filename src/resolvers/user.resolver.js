@@ -2,6 +2,7 @@ const userService = require("../services/user.service");
 const userDAO = require("../dao/user.dao");
 const followDAO = require("../dao/follow.dao");
 const followService = require("../services/follow.service");
+const { UnauthorizedError } = require("../utils/errors");
 
 const userResolvers = {
   Query: {
@@ -19,7 +20,7 @@ const userResolvers = {
     },
     followUser: async (_, { userId }, { user }) => {
       if (!user) {
-        throw new Error("Unauthorized");
+        throw new UnauthorizedError();
       }
 
       await followService.followUser(user.id, userId);
@@ -27,7 +28,7 @@ const userResolvers = {
     },
     unfollowUser: async (_, { userId }, { user }) => {
       if (!user) {
-        throw new Error("Unauthorized");
+        throw new UnauthorizedError();
       }
 
       await followService.unfollowUser(user.id, userId);

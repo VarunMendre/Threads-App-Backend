@@ -11,8 +11,14 @@ const threadTypeDefs = gql`
     createdAt: String!
   }
 
+  type ThreadPagination {
+    threads: [Thread!]!
+    nextCursor: String
+  }
+
   extend type Query {
     getAllThreads: [Thread!]!
+    getThreads(limit: Int, cursor: String): ThreadPagination!
     getThreadById(id: ID!): Thread
   }
 

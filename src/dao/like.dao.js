@@ -1,6 +1,14 @@
 const prisma = require("../config/prisma");
 
 class LikeDAO {
+  async getLike(userId, threadId) {
+    return prisma.like.findUnique({
+      where: {
+        userId_threadId: { userId, threadId },
+      },
+    });
+  }
+
   async likeThread(userId, threadId) {
     return prisma.like.create({
       data: { userId, threadId },

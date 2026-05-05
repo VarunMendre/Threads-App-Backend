@@ -3,11 +3,15 @@ const userService = require("../services/user.service");
 const likeDAO = require("../dao/like.dao");
 const likeService = require("../services/like.service");
 const commentService = require("../services/comment.service");
+const { UnauthorizedError } = require("../utils/errors");
 
 const threadResolvers = {
   Query: {
     getAllThreads: async () => {
       return threadService.getAllThreads();
+    },
+    getThreads: async (_, args) => {
+      return threadService.getThreads(args);
     },
 
     getThreadById: async (_, { id }) => {
@@ -18,7 +22,7 @@ const threadResolvers = {
   Mutation: {
     createThread: async (_, args, { user }) => {
       if (!user) {
-        throw new Error("Unauthorized");
+        throw new UnauthorizedError();
       }
 
       return threadService.createThread({
@@ -28,7 +32,7 @@ const threadResolvers = {
     },
     likeThread: async (_, { threadId }, { user }) => {
       if (!user) {
-        throw new Error("Unauthorized");
+        throw new UnauthorizedError();
       }
 
       await likeService.likeThread(user.id, threadId);
@@ -36,7 +40,7 @@ const threadResolvers = {
     },
     unlikeThread: async (_, { threadId }, { user }) => {
       if (!user) {
-        throw new Error("Unauthorized");
+        throw new UnauthorizedError();
       }
 
       await likeService.unlikeThread(user.id, threadId);
@@ -44,7 +48,7 @@ const threadResolvers = {
     },
     addComment: async (_, { threadId, content }, { user }) => {
       if (!user) {
-        throw new Error("Unauthorized");
+        throw new UnauthorizedError();
       }
 
       return commentService.addComment(user.id, threadId, content);

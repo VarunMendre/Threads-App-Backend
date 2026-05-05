@@ -1,6 +1,14 @@
 const prisma = require("../config/prisma");
 
 class FollowDAO {
+  async getFollow(followerId, followingId) {
+    return prisma.follow.findUnique({
+      where: {
+        followerId_followingId: { followerId, followingId },
+      },
+    });
+  }
+
   async followUser(followerId, followingId) {
     return prisma.follow.create({
       data: { followerId, followingId },
