@@ -33,6 +33,9 @@ model Thread {
   likes     Like[]
   comments  Comment[]
   createdAt DateTime  @default(now())
+
+  @@index([authorId])
+  @@index([createdAt])
 }
 
 model Like {

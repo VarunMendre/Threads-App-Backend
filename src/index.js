@@ -4,6 +4,7 @@ const { PORT, JWT_SECRET, NODE_ENV } = require("./config/env");
 const prisma = require("./config/prisma");
 const typeDefs = require("./schema");
 const resolvers = require("./resolvers");
+const createUserLoader = require("./loaders/user.loader");
 const { error: logError, log } = require("./utils/logger");
 
 const server = new ApolloServer({
@@ -26,6 +27,9 @@ const server = new ApolloServer({
     return {
       req,
       user,
+      loaders: {
+        userLoader: createUserLoader(),
+      },
     };
   },
   formatError: (err) => {

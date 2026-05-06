@@ -1,5 +1,4 @@
 const threadService = require("../services/thread.service");
-const userService = require("../services/user.service");
 const likeDAO = require("../dao/like.dao");
 const likeService = require("../services/like.service");
 const commentService = require("../services/comment.service");
@@ -56,8 +55,8 @@ const threadResolvers = {
   },
 
   Thread: {
-    author: async (parent) => {
-      return userService.getUserById(parent.authorId);
+    author: async (parent, _, { loaders }) => {
+      return loaders.userLoader.load(parent.authorId);
     },
     likesCount: async (parent) => {
       const likes = await likeDAO.getLikesByThread(parent.id);
