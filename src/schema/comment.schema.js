@@ -4,8 +4,8 @@ const commentTypeDefs = gql`
   type Comment {
     id: ID!
     content: String!
-    user: User!
-    thread: Thread!
+    user: User
+    thread: Thread
     createdAt: String!
   }
 `;

@@ -25,12 +25,15 @@ class ThreadService {
 
   async getThreads({ limit, cursor }) {
     const validatedData = validate(paginationSchema, { limit, cursor });
-    const threads = await threadDAO.getPaginatedThreads(
+    const paginatedThreads = await threadDAO.getPaginatedThreads(
       validatedData.limit,
       validatedData.cursor
     );
-    const nextCursor =
-      threads.length === validatedData.limit ? threads[threads.length - 1].id : null;
+    const hasMore = paginatedThreads.length > validatedData.limit;
+    const threads = hasMore
+      ? paginatedThreads.slice(0, validatedData.limit)
+      : paginatedThreads;
+    const nextCursor = hasMore ? threads[threads.length - 1].id : null;
 
     return { threads, nextCursor };
   }

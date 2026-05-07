@@ -40,16 +40,16 @@ const userResolvers = {
     threads: async (parent) => {
       return userDAO.getUserThreads(parent.id);
     },
-    followers: async (parent) => {
+    followers: async (parent, _, { loaders }) => {
       const followers = await followDAO.getFollowersByUser(parent.id);
-      return Promise.all(
-        followers.map((follow) => userService.getUserById(follow.followerId))
+      return loaders.userLoader.loadMany(
+        followers.map((follow) => follow.followerId)
       );
     },
-    following: async (parent) => {
+    following: async (parent, _, { loaders }) => {
       const following = await followDAO.getFollowingByUser(parent.id);
-      return Promise.all(
-        following.map((follow) => userService.getUserById(follow.followingId))
+      return loaders.userLoader.loadMany(
+        following.map((follow) => follow.followingId)
       );
     },
   },

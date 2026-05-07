@@ -28,6 +28,12 @@ class LikeDAO {
       where: { threadId },
     });
   }
+
+  async countLikesByThread(threadId) {
+    return prisma.like.count({
+      where: { threadId },
+    });
+  }
 }
 
 module.exports = new LikeDAO();

@@ -15,6 +15,32 @@ class ThreadDAO {
   }
 
   async getPaginatedThreads(limit, cursor) {
+    let where;
+
+    if (cursor) {
+      const cursorThread = await prisma.thread.findUnique({
+        where: { id: cursor },
+        select: {
+          id: true,
+          createdAt: true,
+        },
+      });
+
+      if (!cursorThread) {
+        return [];
+      }
+
+      where = {
+        OR: [
+          { createdAt: { lt: cursorThread.createdAt } },
+          {
+            createdAt: cursorThread.createdAt,
+            id: { lt: cursorThread.id },
+          },
+        ],
+      };
+    }
+
     return prisma.thread.findMany({
       select: {
         id: true,
@@ -23,9 +49,8 @@ class ThreadDAO {
         authorId: true,
         createdAt: true,
       },
-      take: limit,
-      skip: cursor ? 1 : 0,
-      cursor: cursor ? { id: cursor } : undefined,
+      where,
+      take: limit + 1,
       orderBy: [
         { createdAt: "desc" },
         { id: "desc" },

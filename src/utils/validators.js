@@ -22,7 +22,7 @@ const commentSchema = z.object({
 });
 
 const paginationSchema = z.object({
-  limit: z.number().int().min(1).max(50).default(10),
+  limit: z.number().int().min(1).max(50).nullish().transform((value) => value ?? 10),
   cursor: z.string().trim().min(1).optional(),
 });
 

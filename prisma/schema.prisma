@@ -36,6 +36,7 @@ model Thread {
 
   @@index([authorId])
   @@index([createdAt])
+  @@index([createdAt, id])
 }
 
 model Like {

@@ -59,8 +59,7 @@ const threadResolvers = {
       return loaders.userLoader.load(parent.authorId);
     },
     likesCount: async (parent) => {
-      const likes = await likeDAO.getLikesByThread(parent.id);
-      return likes.length;
+      return likeDAO.countLikesByThread(parent.id);
     },
     comments: async (parent) => {
       return commentService.getComments(parent.id);
