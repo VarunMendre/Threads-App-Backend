@@ -11,6 +11,8 @@ const {
 const { loginSchema, registerSchema, validate } = require("../utils/validators");
 const { log } = require("../utils/logger");
 
+// GraphQL should never leak password hashes back to clients,
+// even if the DAO returns the full database row.
 const sanitizeUser = (user) => ({
   id: user.id,
   name: user.name,
@@ -20,6 +22,7 @@ const sanitizeUser = (user) => ({
 
 class UserService {
   async registerUser({ name, email, password }) {
+    // Normalize + validate first so every later step works with trusted data.
     const validatedData = validate(registerSchema, { name, email, password });
 
     const existingUser = await userDAO.getUserByEmail(validatedData.email);
@@ -55,6 +58,8 @@ class UserService {
       throw new UnauthorizedError("Invalid credentials");
     }
 
+    // The token is the only auth state sent back to the client.
+    // Future requests include it in the Authorization header.
     const token = jwt.sign({ userId: user.id }, JWT_SECRET, {
       expiresIn: "7d",
     });

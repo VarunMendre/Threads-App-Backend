@@ -4,6 +4,7 @@ class LikeDAO {
   async getLike(userId, threadId) {
     return prisma.like.findUnique({
       where: {
+        // Composite unique key prevents duplicate likes for the same user/thread pair.
         userId_threadId: { userId, threadId },
       },
     });

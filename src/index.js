@@ -11,11 +11,16 @@ const server = new ApolloServer({
   typeDefs,
   resolvers,
   context: ({ req }) => {
+    // Every GraphQL request builds a fresh context object.
+    // Resolvers receive this as the 3rd argument, so this is the bridge
+    // between transport-level details (headers/request) and app logic.
     const authHeader = req.headers.authorization || "";
     let user = null;
 
     if (authHeader) {
       try {
+        // We only keep the minimal identity we need in context.
+        // The full user record can be loaded later through the loader/DAO layers.
         const token = authHeader.replace("Bearer ", "");
         const decoded = jwt.verify(token, JWT_SECRET);
         user = { id: decoded.userId };
@@ -28,6 +33,8 @@ const server = new ApolloServer({
       req,
       user,
       loaders: {
+        // DataLoader batches repeated user lookups triggered by nested resolvers.
+        // Example: fetching many threads and resolving each thread.author.
         userLoader: createUserLoader(),
       },
     };

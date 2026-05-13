@@ -27,6 +27,7 @@ const paginationSchema = z.object({
 });
 
 const validate = (schema, data) => {
+  // Centralizing validation keeps error formatting consistent across services.
   const result = schema.safeParse(data);
 
   if (!result.success) {

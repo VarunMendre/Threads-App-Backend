@@ -8,6 +8,7 @@ class CommentService {
   async addComment(userId, threadId, content) {
     const validatedData = validate(commentSchema, { content });
 
+    // We verify both sides of the relationship before inserting the comment.
     const user = await userDAO.getUserById(userId);
     if (!user) {
       throw new NotFoundError("User not found");

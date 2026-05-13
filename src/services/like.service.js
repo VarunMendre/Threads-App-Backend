@@ -5,6 +5,7 @@ const { BadRequestError, NotFoundError } = require("../utils/errors");
 
 class LikeService {
   async likeThread(userId, threadId) {
+    // Likes depend on both the acting user and target thread existing.
     const user = await userDAO.getUserById(userId);
     if (!user) {
       throw new NotFoundError("User not found");
@@ -20,6 +21,7 @@ class LikeService {
       throw new BadRequestError("Thread already liked");
     }
 
+    // The DAO only performs the write once business rules are satisfied.
     return likeDAO.likeThread(userId, threadId);
   }
 

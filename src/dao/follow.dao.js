@@ -4,6 +4,7 @@ class FollowDAO {
   async getFollow(followerId, followingId) {
     return prisma.follow.findUnique({
       where: {
+        // Follow relationships are unique per follower/following pair.
         followerId_followingId: { followerId, followingId },
       },
     });

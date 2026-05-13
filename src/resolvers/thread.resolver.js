@@ -7,6 +7,8 @@ const { UnauthorizedError } = require("../utils/errors");
 const threadResolvers = {
   Query: {
     getAllThreads: async () => {
+      // Resolver delegates immediately to the service layer.
+      // Services own validation and business decisions.
       return threadService.getAllThreads();
     },
     getThreads: async (_, args) => {
@@ -24,6 +26,8 @@ const threadResolvers = {
         throw new UnauthorizedError();
       }
 
+      // The authenticated user becomes the author automatically.
+      // Clients do not choose arbitrary author ids.
       return threadService.createThread({
         ...args,
         authorId: user.id,
@@ -56,12 +60,16 @@ const threadResolvers = {
 
   Thread: {
     author: async (parent, _, { loaders }) => {
+      // parent is the thread row returned by the query/mutation above.
+      // We resolve related data lazily only when the GraphQL selection asks for it.
       return loaders.userLoader.load(parent.authorId);
     },
     likesCount: async (parent) => {
       return likeDAO.countLikesByThread(parent.id);
     },
     comments: async (parent) => {
+      // Comment fetching is separated so simple thread queries do not
+      // automatically load comments unless the client asks for them.
       return commentService.getComments(parent.id);
     },
   },

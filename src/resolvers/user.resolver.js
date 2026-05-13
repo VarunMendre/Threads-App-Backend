@@ -41,6 +41,8 @@ const userResolvers = {
       return userDAO.getUserThreads(parent.id);
     },
     followers: async (parent, _, { loaders }) => {
+      // Follow records store ids only.
+      // We first read the relationship rows, then hydrate actual user objects.
       const followers = await followDAO.getFollowersByUser(parent.id);
       return loaders.userLoader.loadMany(
         followers.map((follow) => follow.followerId)

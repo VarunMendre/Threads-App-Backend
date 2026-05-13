@@ -10,6 +10,7 @@ class CommentDAO {
   async getCommentsByThread(threadId) {
     return prisma.comment.findMany({
       where: { threadId },
+      // Latest comments first keeps the API response aligned with thread ordering.
       orderBy: { createdAt: "desc" },
     });
   }

@@ -2,9 +2,9 @@
 
 A backend for a Threads-like social media application built with GraphQL, Apollo Server, Prisma, and PostgreSQL.
 
-The project now follows a clean layered flow:
+The codebase is intentionally split into layers so data flow is easy to trace:
 
-`Resolvers -> Services -> DAO -> Database`
+`GraphQL Request -> Resolver -> Service -> DAO -> Prisma -> Database`
 
 ## Tech Stack
 
@@ -39,6 +39,58 @@ Client -> GraphQL API -> Resolvers -> Services -> DAO -> Database
 - DAO files are the only layer that talks directly to Prisma.
 - PostgreSQL stores the application data.
 
+## How To Read The Code
+
+If you want to understand the code flow bit by bit, read it in this order:
+
+1. `src/index.js`
+   This is the application entry point. It creates the Apollo server, reads the JWT token from the request header, and builds the `context` object used by every resolver.
+2. `src/schema/*.js`
+   These files define what the GraphQL API looks like from the client side: types, queries, and mutations.
+3. `src/resolvers/*.js`
+   Resolvers are the first application layer that receives GraphQL input. They do small orchestration work and call services.
+4. `src/services/*.js`
+   Services hold the business rules: validation, authorization-related checks, duplicate prevention, missing-record checks, and pagination logic.
+5. `src/dao/*.js`
+   DAO files are the persistence layer. They run Prisma queries and return database rows.
+6. `src/loaders/*.js`
+   Loaders batch repeated relationship lookups inside a single request to avoid unnecessary database queries.
+
+## Request Flow Examples
+
+### Example 1: `createThread`
+
+```text
+Client mutation
+  -> thread resolver checks authenticated user from context
+  -> thread service validates title/content
+  -> thread service confirms author exists
+  -> thread DAO writes the row with Prisma
+  -> created thread is returned to GraphQL
+```
+
+### Example 2: `getThreads`
+
+```text
+Client query
+  -> thread resolver forwards limit/cursor args
+  -> thread service validates pagination input
+  -> thread DAO fetches limit + 1 rows using cursor logic
+  -> thread service computes hasMore/nextCursor behavior
+  -> GraphQL returns threads and nextCursor
+```
+
+### Example 3: nested `thread.author`
+
+```text
+Client asks for threads { author { name } }
+  -> thread query fetches thread rows first
+  -> Thread.author field resolver receives each thread as parent
+  -> user DataLoader batches all author ids together
+  -> Prisma fetches users in one batched query
+  -> matching user is attached to each thread
+```
+
 ## Current Features
 
 - Apollo GraphQL server setup
@@ -62,9 +114,11 @@ Client -> GraphQL API -> Resolvers -> Services -> DAO -> Database
 
 Business rules:
 
-- Prevents empty registration fields
+- Prevents invalid registration and login payloads
 - Prevents duplicate email registration
-- Throws a clear error when a user is missing
+- Hashes passwords before saving
+- Returns sanitized user data without password hashes
+- Throws clear errors when a user is missing or credentials are invalid
 
 ### Thread Service
 
@@ -78,7 +132,14 @@ Business rules:
 
 - Prevents empty thread title or content
 - Verifies that the author exists
+- Implements cursor pagination
 - Throws a clear error when a thread is missing
+
+### Social Features
+
+- `comment.service.js` validates comment content and checks that both user and thread exist before inserting a comment.
+- `like.service.js` prevents duplicate likes and ensures the target thread exists.
+- `follow.service.js` prevents self-following and duplicate follow relationships.
 
 ## GraphQL Operations
 
@@ -129,11 +190,10 @@ mutation RegisterUser {
 ```
 
 ```graphql
-mutation CreateThread($authorId: ID!) {
+mutation CreateThread {
   createThread(
     title: "Service Layer Thread"
     content: "Now we are using services"
-    authorId: $authorId
   ) {
     id
     title

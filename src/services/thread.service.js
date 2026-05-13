@@ -5,13 +5,16 @@ const { threadSchema, paginationSchema, validate } = require("../utils/validator
 
 class ThreadService {
   async createThread({ title, content, authorId }) {
+    // Step 1: validate raw input coming from GraphQL args.
     const validatedData = validate(threadSchema, { title, content });
 
+    // Step 2: verify referenced records before writing.
     const user = await userDAO.getUserById(authorId);
     if (!user) {
       throw new NotFoundError("Author not found");
     }
 
+    // Step 3: delegate persistence to the DAO.
     return threadDAO.createThread({
       title: validatedData.title,
       content: validatedData.content,
@@ -29,6 +32,9 @@ class ThreadService {
       validatedData.limit,
       validatedData.cursor
     );
+
+    // The DAO fetches one extra row so the service can answer:
+    // "is there another page after this one?"
     const hasMore = paginatedThreads.length > validatedData.limit;
     const threads = hasMore
       ? paginatedThreads.slice(0, validatedData.limit)

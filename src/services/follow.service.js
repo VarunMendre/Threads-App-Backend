@@ -8,6 +8,7 @@ class FollowService {
       throw new BadRequestError("Cannot follow yourself");
     }
 
+    // The service guards relationship rules so the DAO can stay persistence-only.
     const follower = await userDAO.getUserById(followerId);
     if (!follower) {
       throw new NotFoundError("Follower not found");

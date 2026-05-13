@@ -18,6 +18,8 @@ class ThreadDAO {
     let where;
 
     if (cursor) {
+      // Cursor pagination here is based on a stable sort:
+      // newest createdAt first, and id as a tie-breaker when timestamps match.
       const cursorThread = await prisma.thread.findUnique({
         where: { id: cursor },
         select: {
@@ -30,6 +32,8 @@ class ThreadDAO {
         return [];
       }
 
+      // Fetch rows "after" the cursor in descending order.
+      // For identical timestamps we compare ids so pagination stays deterministic.
       where = {
         OR: [
           { createdAt: { lt: cursorThread.createdAt } },
@@ -50,6 +54,7 @@ class ThreadDAO {
         createdAt: true,
       },
       where,
+      // One extra row lets the service compute nextCursor / hasMore.
       take: limit + 1,
       orderBy: [
         { createdAt: "desc" },

@@ -22,6 +22,8 @@ class UserDAO {
   async getUserThreads(userId) {
     return prisma.thread.findMany({
       where: { authorId: userId },
+      // Keep a predictable order for profile screens and nested GraphQL reads.
+      orderBy: { createdAt: "desc" },
     });
   }
 }
