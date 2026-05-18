@@ -1,10 +1,10 @@
-# Threads Backend (GraphQL)
+# Threads Backend
 
-A backend for a Threads-like social media application built with GraphQL, Apollo Server, Prisma, and PostgreSQL.
+A GraphQL backend for a Threads-like social media app built with Node.js, Apollo Server, Prisma, and PostgreSQL.
 
-The codebase is intentionally split into layers so data flow is easy to trace:
+The project uses a layered flow so features are easy to trace:
 
-`GraphQL Request -> Resolver -> Service -> DAO -> Prisma -> Database`
+`GraphQL Request -> Resolver -> Service -> DAO -> Prisma -> PostgreSQL`
 
 ## Tech Stack
 
@@ -13,135 +13,95 @@ The codebase is intentionally split into layers so data flow is easy to trace:
 - GraphQL
 - Prisma ORM
 - PostgreSQL
-- Nodemon
+- JWT authentication
+- DataLoader
+- Zod validation
+
+## Features
+
+- User registration and login
+- JWT-based authentication
+- Create and fetch threads
+- Cursor-based thread pagination
+- Like and unlike threads
+- Add comments to threads
+- Follow and unfollow users
+- Batched nested user resolution with DataLoader
+- Layered architecture with resolvers, services, and DAOs
 
 ## Project Structure
 
 ```text
 src/
-|-- index.js            # App entry point
-|-- config/             # Env and Prisma configuration
-|-- schema/             # GraphQL type definitions
-|-- resolvers/          # GraphQL resolvers
-|-- services/           # Business logic and validations
-|-- dao/                # Data access layer
-|-- utils/              # Shared helpers
+|-- index.js
+|-- config/
+|   |-- env.js
+|   |-- prisma.js
+|-- schema/
+|   |-- index.js
+|   |-- user.schema.js
+|   |-- thread.schema.js
+|   |-- comment.schema.js
+|-- resolvers/
+|   |-- index.js
+|   |-- user.resolver.js
+|   |-- thread.resolver.js
+|-- services/
+|   |-- user.service.js
+|   |-- thread.service.js
+|   |-- comment.service.js
+|   |-- like.service.js
+|   |-- follow.service.js
+|-- dao/
+|   |-- user.dao.js
+|   |-- thread.dao.js
+|   |-- comment.dao.js
+|   |-- like.dao.js
+|   |-- follow.dao.js
+|-- loaders/
+|   |-- user.loader.js
+|-- utils/
+|   |-- errors.js
+|   |-- logger.js
+|   |-- validators.js
+prisma/
+|-- schema.prisma
+|-- migrations/
+docs/
+|-- code-flow.md
 ```
 
-## Architecture
+## Data Model
 
-```text
-Client -> GraphQL API -> Resolvers -> Services -> DAO -> Database
+The Prisma schema currently includes these models:
+
+- `User`
+- `Thread`
+- `Like`
+- `Comment`
+- `Follow`
+
+Relationships supported by the API:
+
+- A user can create many threads
+- A user can like many threads
+- A user can comment on many threads
+- A user can follow many users and be followed by many users
+
+## Authentication
+
+- `loginUser` returns a JWT token
+- Send the token in the `Authorization` header
+- Format: `Bearer <token>`
+- Authenticated mutations automatically use `context.user.id`
+
+Example:
+
+```http
+Authorization: Bearer your_jwt_token
 ```
 
-- Resolvers handle GraphQL queries, mutations, and field resolution.
-- Services enforce business rules and validations.
-- DAO files are the only layer that talks directly to Prisma.
-- PostgreSQL stores the application data.
-
-## How To Read The Code
-
-If you want to understand the code flow bit by bit, read it in this order:
-
-1. `src/index.js`
-   This is the application entry point. It creates the Apollo server, reads the JWT token from the request header, and builds the `context` object used by every resolver.
-2. `src/schema/*.js`
-   These files define what the GraphQL API looks like from the client side: types, queries, and mutations.
-3. `src/resolvers/*.js`
-   Resolvers are the first application layer that receives GraphQL input. They do small orchestration work and call services.
-4. `src/services/*.js`
-   Services hold the business rules: validation, authorization-related checks, duplicate prevention, missing-record checks, and pagination logic.
-5. `src/dao/*.js`
-   DAO files are the persistence layer. They run Prisma queries and return database rows.
-6. `src/loaders/*.js`
-   Loaders batch repeated relationship lookups inside a single request to avoid unnecessary database queries.
-
-## Request Flow Examples
-
-### Example 1: `createThread`
-
-```text
-Client mutation
-  -> thread resolver checks authenticated user from context
-  -> thread service validates title/content
-  -> thread service confirms author exists
-  -> thread DAO writes the row with Prisma
-  -> created thread is returned to GraphQL
-```
-
-### Example 2: `getThreads`
-
-```text
-Client query
-  -> thread resolver forwards limit/cursor args
-  -> thread service validates pagination input
-  -> thread DAO fetches limit + 1 rows using cursor logic
-  -> thread service computes hasMore/nextCursor behavior
-  -> GraphQL returns threads and nextCursor
-```
-
-### Example 3: nested `thread.author`
-
-```text
-Client asks for threads { author { name } }
-  -> thread query fetches thread rows first
-  -> Thread.author field resolver receives each thread as parent
-  -> user DataLoader batches all author ids together
-  -> Prisma fetches users in one batched query
-  -> matching user is attached to each thread
-```
-
-## Current Features
-
-- Apollo GraphQL server setup
-- Prisma + PostgreSQL integration
-- User and Thread schema definitions
-- DAO layer for user and thread persistence
-- Service layer for business logic
-- Validation for required fields
-- Duplicate email protection during registration
-- Author existence validation before thread creation
-
-## Implemented Services
-
-### User Service
-
-`src/services/user.service.js`
-
-- `registerUser({ name, email, password })`
-- `getUserById(id)`
-- `getUserThreads(userId)`
-
-Business rules:
-
-- Prevents invalid registration and login payloads
-- Prevents duplicate email registration
-- Hashes passwords before saving
-- Returns sanitized user data without password hashes
-- Throws clear errors when a user is missing or credentials are invalid
-
-### Thread Service
-
-`src/services/thread.service.js`
-
-- `createThread({ title, content, authorId })`
-- `getAllThreads()`
-- `getThreadById(id)`
-
-Business rules:
-
-- Prevents empty thread title or content
-- Verifies that the author exists
-- Implements cursor pagination
-- Throws a clear error when a thread is missing
-
-### Social Features
-
-- `comment.service.js` validates comment content and checks that both user and thread exist before inserting a comment.
-- `like.service.js` prevents duplicate likes and ensures the target thread exists.
-- `follow.service.js` prevents self-following and duplicate follow relationships.
-
-## GraphQL Operations
+## GraphQL API
 
 ### Queries
 
@@ -151,6 +111,14 @@ query GetUser($id: ID!) {
     id
     name
     email
+    followers {
+      id
+      name
+    }
+    following {
+      id
+      name
+    }
     threads {
       id
       title
@@ -160,14 +128,45 @@ query GetUser($id: ID!) {
 ```
 
 ```graphql
-query GetAllThreads {
-  getAllThreads {
+query GetThreads($limit: Int, $cursor: String) {
+  getThreads(limit: $limit, cursor: $cursor) {
+    threads {
+      id
+      title
+      content
+      likesCount
+      author {
+        id
+        name
+      }
+      comments {
+        id
+        content
+      }
+    }
+    nextCursor
+  }
+}
+```
+
+```graphql
+query GetThreadById($id: ID!) {
+  getThreadById(id: $id) {
     id
     title
     content
+    createdAt
     author {
       id
       name
+    }
+    comments {
+      id
+      content
+      user {
+        id
+        name
+      }
     }
   }
 }
@@ -178,29 +177,75 @@ query GetAllThreads {
 ```graphql
 mutation RegisterUser {
   registerUser(
-    name: "Test User"
-    email: "test@example.com"
+    name: "Varun"
+    email: "varun@example.com"
     password: "123456"
   ) {
     id
     name
     email
+    createdAt
+  }
+}
+```
+
+```graphql
+mutation LoginUser {
+  loginUser(email: "varun@example.com", password: "123456") {
+    token
+    user {
+      id
+      name
+      email
+    }
   }
 }
 ```
 
 ```graphql
 mutation CreateThread {
-  createThread(
-    title: "Service Layer Thread"
-    content: "Now we are using services"
-  ) {
+  createThread(title: "First thread", content: "Hello from GraphQL backend") {
     id
     title
     content
+    createdAt
   }
 }
 ```
+
+```graphql
+mutation LikeThread($threadId: ID!) {
+  likeThread(threadId: $threadId)
+}
+```
+
+```graphql
+mutation AddComment($threadId: ID!, $content: String!) {
+  addComment(threadId: $threadId, content: $content) {
+    id
+    content
+    createdAt
+  }
+}
+```
+
+```graphql
+mutation FollowUser($userId: ID!) {
+  followUser(userId: $userId)
+}
+```
+
+## Validation Rules
+
+Current service-level validation includes:
+
+- `name` must be at least 2 characters
+- `password` must be at least 6 characters
+- `title` is required
+- `content` is required for threads and comments
+- pagination `limit` must be between 1 and 50
+
+The code uses Zod schemas in [src/utils/validators.js](/E:/VARUN/NodeJs_crash_course/NodeJs/projects/Threads-App-Backend/src/utils/validators.js).
 
 ## Getting Started
 
@@ -210,22 +255,30 @@ mutation CreateThread {
 npm install
 ```
 
-### 2. Create `.env`
+### 2. Configure environment variables
 
-Add your environment variables in the project root:
+Create a `.env` file in the project root:
 
 ```env
 PORT=8000
-DATABASE_URL=your_postgresql_connection_string
+DATABASE_URL=postgresql://USER:PASSWORD@localhost:5432/threads_db
+JWT_SECRET=your_secret_key
+NODE_ENV=development
 ```
 
-### 3. Generate Prisma client
+### 3. Run Prisma migrations
+
+```bash
+npx prisma migrate dev
+```
+
+### 4. Generate Prisma client
 
 ```bash
 npx prisma generate
 ```
 
-### 4. Run the server
+### 5. Start the server
 
 ```bash
 npm run dev
@@ -237,23 +290,31 @@ If PowerShell blocks `npm`, use:
 npm.cmd run dev
 ```
 
-## API Endpoint
+## Local API Endpoint
 
-Open GraphQL Playground at:
+When the server is running locally, Apollo Server starts at:
 
 ```text
 http://localhost:8000/
 ```
 
-## Phase Status
+## Code Reading Guide
 
-- Phase 1: Server setup
-- Phase 2: Prisma and PostgreSQL setup
-- Phase 3: GraphQL schema design
-- Phase 4: DAO layer
-- Phase 5: Service layer
-- Phase 6: Authentication and authorization
-- Phase 7: Production improvements
+If you want to understand the app flow quickly, read files in this order:
+
+1. [src/index.js](/E:/VARUN/NodeJs_crash_course/NodeJs/projects/Threads-App-Backend/src/index.js)
+2. [src/schema/index.js](/E:/VARUN/NodeJs_crash_course/NodeJs/projects/Threads-App-Backend/src/schema/index.js)
+3. [src/resolvers/index.js](/E:/VARUN/NodeJs_crash_course/NodeJs/projects/Threads-App-Backend/src/resolvers/index.js)
+4. `src/services/*.js`
+5. `src/dao/*.js`
+6. [docs/code-flow.md](/E:/VARUN/NodeJs_crash_course/NodeJs/projects/Threads-App-Backend/docs/code-flow.md)
+
+## Notes
+
+- Password hashes are never returned in GraphQL responses
+- Nested user lookups are batched per request with DataLoader
+- Thread pagination uses cursor-based pagination, not offset pagination
+- Prisma indexes are already added for thread listing performance
 
 ## Author
 
